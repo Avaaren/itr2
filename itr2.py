@@ -4,8 +4,9 @@ from mimesis import Generic
 from mimesis.builtins import RussiaSpecProvider
 from mimesis.enums import Gender
 import time 
+import json
+import requests
 
-from googletrans import Translator
 
 start_time = time.time()
 
@@ -14,7 +15,9 @@ start_time = time.time()
 en = 'en'
 ru = 'ru'
 FILENAME = 'user_data.csv'
-translator = Translator()
+API = 'trnsl.1.1.20200112T220923Z.5d6803ff56ec93a3.4c200fab657566d38fc110de249beee8b8323f53'
+URL = f'https://translate.yandex.net/api/v1.5/tr.json/translate?lang=ru-be&key={API}'
+
 operations = ['delete', 'move', 'add']
 parameters = ['full_name', 'address', 'phone_number']
 list1 = []
@@ -71,8 +74,11 @@ def create_list(locale, cl_locale, number_of_strings, number_of_errors):
         if locale == 'ru':
             
             full_name = f'{generic.person.full_name(gender = person_gender)} {r.patronymic(gender = person_gender)}'
-            # if cl_locale == 'be_BY':
-            #     full_name = translator.translate(full_name)
+            if cl_locale == 'be_BY':
+                params1 = {'text':full_name}
+                response = requests.get(URL, params=params1)
+                full_name = response.json()['text'][0]
+                # full_name = response.json()[text]
         else:
             full_name = f'{generic.person.full_name(gender = person_gender)}'
         
@@ -81,8 +87,11 @@ def create_list(locale, cl_locale, number_of_strings, number_of_errors):
         address = f'{generic.address.address()}' 
         if locale == 'ru':
             address = address[:-1] 
-            # if cl_locale == 'be_BY':
-            #     address = translator.translate(address)
+            if cl_locale == 'be_BY':
+                params1 = {'text':address}
+                response = requests.get(URL, params=params1)
+                address = response.json()['text'][0]
+
 ###################Phone ###################
         if cl_locale == 'us_US':
             phone_number = generic.person.telephone('-1 (###) ###-####')
@@ -108,7 +117,6 @@ def create_list(locale, cl_locale, number_of_strings, number_of_errors):
                     phone = make_mistakes(choice, phone_number)
 
         else:
-            print(suka)
             for error_number in range(number_of_errors):
                 choice = random.choice(parameters)
                 if choice == 'full_name':
@@ -155,21 +163,10 @@ if __name__ == '__main__':
                 writer.writerow(line)
 
     if locale == 'be_BY':
-        s = []
-        ss = []
-        list_data = create_list(ru, locale, number_of_strings, number_of_errors)
-        translated_data = translator.translate(list_data, dest = 'be')
-        for lists in translated_data:
-            s.append(lists[0].text)
-            s.append(lists[1].text)
-            s.append(lists[2].text)
-            ss.append(s)
-            s = []
-
-        
+        list_data = create_list(ru, locale, number_of_strings, number_of_errors)        
         with open(FILENAME, 'w', newline='', encoding='utf-8') as csv_file:
             writer = csv.writer(csv_file, delimiter = ';')
-            for line in ss:
+            for line in list_data:
                 writer.writerow(line)
 
     print(time.time() - start_time)
