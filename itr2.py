@@ -8,8 +8,10 @@ import json
 import requests
 from faker import Faker
 
+ru_alph = 'А,а,Б,б,В,в,Г,г,Д,д,Е,е,Ё,ё,Ж,ж,З,з,И,и,Й,й,К,к,Л,л,М,м,Н,н,О,о,П,п,С,с,Т,т,У,у,Ф,ф,Х,х,Ц,ц,Ч,ч,Ш,ш,Щ,щ,Ъ,ъ,Ы,ы,Ь,ь,Э,э,Ю,ю,Я,я'
+ru_alph_list = ru_alph.split(',')
+# print(ru_alph_list)
 gender = ['male', 'female']
-start_time = time.time()
 faker_by = Faker('be_BY')
 faker_en = Faker('en_US')
 faker_ru = Faker('ru_RU')
@@ -18,13 +20,11 @@ faker_ru = Faker('ru_RU')
 en = 'en'
 ru = 'ru'
 by = 'by'
-FILENAME = 'user_data.csv'
 
 
 operations = ['delete', 'move', 'add']
 parameters = ['full_name', 'address', 'phone_number']
 list1 = []
-# af8fa33706408074786
 
 def create_parser():
     parser = argparse.ArgumentParser()
@@ -33,7 +33,7 @@ def create_parser():
     parser.add_argument('number_of_errors')
     return parser
 
-def choice_operation_method(string_to_mistake, choice_of_operation,choice_of_char):
+def choice_operation_method(string_to_mistake, choice_of_operation,choice_of_char,locale):
     if choice_of_operation == 'delete':
         string_to_mistake = string_to_mistake.replace(string_to_mistake[choice_of_char], '')
     if choice_of_operation == 'move':
@@ -41,17 +41,20 @@ def choice_operation_method(string_to_mistake, choice_of_operation,choice_of_cha
         # print(string_to_mistake[choice_of_char])
         string_to_mistake = string_to_mistake.replace(string_to_mistake[choice_of_char], string_to_mistake[choice_of_char+1])
     if choice_of_operation == 'add':
-        string_to_mistake = string_to_mistake[:choice_of_char]+random.choice(string.ascii_letters)+string_to_mistake[choice_of_char:]
+        if locale == 'en':
+            string_to_mistake = string_to_mistake[:choice_of_char]+random.choice(string.ascii_letters)+string_to_mistake[choice_of_char:]
+        else:
+            string_to_mistake = string_to_mistake[:choice_of_char]+random.choice(ru_alph_list)+string_to_mistake[choice_of_char:]
     return string_to_mistake
 
 
-def make_mistakes(choice, string_to_mistake):
+def make_mistakes(choice, string_to_mistake,locale):
     if choice == 'full_name':
         if len(string_to_mistake)-2 >= 1:
             choice_of_char = random.randint(0, len(string_to_mistake)-2)
         
             choice_of_operation = random.choice(operations)
-            string_to_mistake = choice_operation_method(string_to_mistake, choice_of_operation,choice_of_char)
+            string_to_mistake = choice_operation_method(string_to_mistake, choice_of_operation,choice_of_char,locale)
         else:
             pass
     if choice == 'address':
@@ -59,7 +62,7 @@ def make_mistakes(choice, string_to_mistake):
             choice_of_char = random.randint(0, len(string_to_mistake)-2)
         
             choice_of_operation = random.choice(operations)
-            string_to_mistake = choice_operation_method(string_to_mistake, choice_of_operation,choice_of_char)
+            string_to_mistake = choice_operation_method(string_to_mistake, choice_of_operation,choice_of_char,locale)
         else:
             pass
     if choice == 'phone_number':
@@ -67,7 +70,7 @@ def make_mistakes(choice, string_to_mistake):
             choice_of_char = random.randint(0, len(string_to_mistake)-2)
         
             choice_of_operation = random.choice(operations)
-            string_to_mistake = choice_operation_method(string_to_mistake, choice_of_operation,choice_of_char)
+            string_to_mistake = choice_operation_method(string_to_mistake, choice_of_operation,choice_of_char,locale)
         else:
             pass
         
@@ -94,17 +97,17 @@ def create_list(locale, cl_locale, number_of_strings, number_of_errors):
         if locale == 'en':
             address = faker_en.street_address()
             if person_gender == 'male':
-                full_name = f'{faker_en.last_name_male()} {faker_en.first_name_male()} {faker_en.middle_name_male()}'
+                full_name = f'{faker_en.last_name_male()} {faker_en.first_name_male()}'
             else:
-                full_name = f'{faker_en.last_name_female()} {faker_en.first_fename_male()} {faker_en.middle_name_female()}'
+                full_name = f'{faker_en.last_name_female()} {faker_en.first_name_female()}'
         if locale == 'by':
-            address = faker_by.street_address()
+            address = f'{faker_by.street_address()}, кв.{random.randint(0,100)}'
             if person_gender == 'male':
                 full_name = f'{faker_by.last_name_male()} {faker_by.first_name_male()} {faker_by.middle_name_male()}'
             else:
-                full_name = f'{faker_by.last_name_female()} {faker_by.first_fename_male()} {faker_by.middle_name_female()}'
+                full_name = f'{faker_by.last_name_female()} {faker_by.first_name_female()} {faker_by.middle_name_female()}'
             
-        if cl_locale == 'us_US':
+        if cl_locale == 'en_US':
             phone_number = generic.person.telephone('-1 (###) ###-####')
         if cl_locale == 'ru_RU':
             phone_number = generic.person.telephone('-7 (###) ###-##-##')
@@ -118,11 +121,11 @@ def create_list(locale, cl_locale, number_of_strings, number_of_errors):
             elif (i / stringsToError >= 1 and i % stringsToError == 0):
                 choice = random.choice(parameters)
                 if choice == 'full_name':
-                    full_name = make_mistakes(choice, full_name)
+                    full_name = make_mistakes(choice, full_name,locale)
                 if choice == 'address':
-                    address = make_mistakes(choice, address)
+                    address = make_mistakes(choice, address,locale)
                 if choice == 'phone_number':
-                    phone_number = make_mistakes(choice, phone_number)
+                    phone_number = make_mistakes(choice, phone_number,locale)
         if number_of_errors == 0:
             pass
         else:
@@ -130,16 +133,16 @@ def create_list(locale, cl_locale, number_of_strings, number_of_errors):
             for error_number in range(number_of_errors):
                 choice = random.choice(parameters)
                 if choice == 'full_name':
-                    full_name = make_mistakes(choice, full_name)
+                    full_name = make_mistakes(choice, full_name,locale)
                 if choice == 'address':
-                    address = make_mistakes(choice, address)
+                    address = make_mistakes(choice, address,locale)
                 if choice == 'phone_number':
-                    phone_number = make_mistakes(choice, phone_number)
+                    phone_number = make_mistakes(choice, phone_number,locale)
             
+        person_data = f'{full_name};{address};{phone_number}'
 
-
-        csv_string = [full_name, address, phone_number]
-        list1.append(csv_string)
+        # csv_string = [person_data]
+        list1.append(person_data)
     return list1
 
 
@@ -155,31 +158,26 @@ if __name__ == '__main__':
         number_of_errors = float(namespace.number_of_errors)
     except ValueError:
         print('Incorrect args')
+        sys.exit()
 
     
     
-    if locale == 'us_US':
+    if locale == 'en_US':
         list_data = create_list(en, locale, number_of_strings, number_of_errors)
-        with open(FILENAME, 'w', newline='', encoding='utf-8') as csv_file:
-            writer = csv.writer(csv_file, delimiter = ';')
-            for line in list_data:
-                writer.writerow(line)
+        for el in list_data:
+            print(el)
 
     if locale == 'ru_RU':
         list_data = create_list(ru, locale, number_of_strings, number_of_errors)
-        with open(FILENAME, 'w', newline='', encoding='utf-8') as csv_file:
-            writer = csv.writer(csv_file, delimiter = ';')
-            for line in list_data:
-                writer.writerow(line)
+        for el in list_data:
+            print(el)
 
     if locale == 'be_BY':
         list_data = create_list(by, locale, number_of_strings, number_of_errors)        
-        with open(FILENAME, 'w', newline='', encoding='utf-8') as csv_file:
-            writer = csv.writer(csv_file, delimiter = ';')
-            for line in list_data:
-                writer.writerow(line)
+        for el in list_data:
+            print(el)
 
-    print(time.time() - start_time)
+    # print(time.time() - start_time)
 
 
     
